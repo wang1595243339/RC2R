@@ -1,2 +1,2 @@
-# RC-CRM
-RC-CRM is a causal reasoning model that integrates LLMs and KGs.
+# RC2R
+RC2R is a causal reasoning model that integrates LLMs and KGs.
