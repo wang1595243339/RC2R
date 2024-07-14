@@ -14,26 +14,25 @@ def iter_generate(model, input_text, graph, max_length=50, temperature=1.0, top_
     graph = graph.to(model.device)
     input_ids = model.get_token_ids(input_text)
 
-    # 初始化生成的文本为输入文本
     generated = input_ids
 
-    with torch.no_grad():  # 不计算梯度
+    with torch.no_grad():  
         for _ in range(max_length):
             predictions, att_weights = model.generate(generated, graph)
 
-            # 采用最后一个时间步的预测结果
+            
             next_token_logits = predictions / temperature
 
-            # 应用top-k采样
+            # top-k
             if top_k > 0:
                 indices_to_remove = next_token_logits < torch.topk(next_token_logits, top_k)[0][..., -1, None]
                 next_token_logits[indices_to_remove] = -float('Inf')
 
             next_token = torch.multinomial(torch.nn.functional.softmax(next_token_logits, dim=-1), num_samples=1)
-            # 将新生成的词添加到生成的文本中
+            
             generated = torch.cat((generated, next_token), dim=-1)
             # attention_mask = torch.cat([attention_mask, torch.ones([attention_mask.size(0), 1], dtype=torch.float32).to(attention_mask.device)], dim=-1)
-            # 检查是否生成了结束符
+            
             if next_token == model.tokenizer.eos_token_id:
                 break
 
