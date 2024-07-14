@@ -44,13 +44,13 @@ class GraphEncoder(nn.Module):
         super(GraphEncoder, self).__init__()
         self.layers = nn.ModuleList()
         self.activation = F.relu
-        # 第一层
+        # first layer
         self.layers.append(GraphConv(in_feat, hidden_size, bias=True))
-        # 中间层
+        # middle layer
         for _ in range(1, n_layers-1):
             self.layers.append(GraphConv(hidden_size, hidden_size, bias=True))
 
-        # 最后一层，不加激活函数
+        # last layer (no activation function)
         self.layers.append(GraphConv(hidden_size, out_size, bias=True))
         self.skip_proj = nn.Linear(hidden_size, out_size)
 
@@ -65,9 +65,8 @@ class GraphEncoder(nn.Module):
                 if h.size(1) != gcn_out.size(1):
                     h = 0.6 * self.skip_proj(h) + 0.4 * gcn_out
                 else:
-                    h = 0.6 * h + 0.4 * gcn_out  # 残差连接
-                    
-            # 除了最后一层外，其他层后面都接激活函数
+                    h = 0.6 * h + 0.4 * gcn_out  
+
             if i < num_layers:
                 h = self.activation(h)
         # h = unbatch_node_embeddings(graph, h)
@@ -140,7 +139,7 @@ class JointReasoning(nn.Module):
         self.tokenizer = AutoTokenizer.from_pretrained("/public/home/yugy/causal_reasoning/gemma-7b-1t")
         self.graph_encoder = GraphEncoder(g_in_feat, g_n_layers, g_hidden_size, g_out_size).to(self.device)
 
-        # 必须保证text的维度和node_embedding的维度一样
+        # ensure dim of text and node_embedding  same
         self.attention_layer = nn.MultiheadAttention(embed_dim=g_out_size,
                                                      num_heads=n_head,
                                                      dropout=0,
@@ -156,7 +155,7 @@ class JointReasoning(nn.Module):
         graph = graph.to(self.device) if graph.device != self.device else graph
         node_feature = graph.ndata['embedding']
         node_feature = node_feature.to(self.dtype) if node_feature.dtype != self.dtype else node_feature
-        node_embeddings = self.graph_encoder(graph, node_feature) # 3维
+        node_embeddings = self.graph_encoder(graph, node_feature) # 3dim
         return node_embeddings
     
     def get_cross_attention(self, token_embeddings, node_embeddings):
